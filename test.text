@@ -1,0 +1,5 @@
+gh issue create \
+  --title "[TASK] Restrukturisasi Folder & Clean Architecture" \
+  --body-file issue.md \
+  --label "enhancement" \
+  --assignee "@me"

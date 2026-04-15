@@ -1,10 +1,11 @@
 ## 📌 Deskripsi
-Menerapkan standar linting profesional untuk memastikan kode bersih, konsisten, dan bebas dari peringatan (warnings).
+Merapikan struktur folder project agar sesuai dengan standar Clean Architecture untuk meningkatkan maintainability dan skalabilitas kode.
 
 ## 🎯 Target
-- [ ] Konfigurasi `analysis_options.yaml` dengan aturan ketat.
-- [ ] Perbaikan otomatis menggunakan `dart fix`.
-- [ ] Memastikan `flutter analyze` menghasilkan 0 issues.
+- [ ] Memindahkan file screen ke folder `presentation/pages/`.
+- [ ] Memisahkan komponen UI kecil ke folder `presentation/widgets/`.
+- [ ] Membuat folder `core/` untuk menyimpan tema dan konstanta global.
+- [ ] Memastikan semua import diperbarui (fix imports).
 
 ## ✅ Kriteria Selesai
-Pesan "No issues found!" muncul saat menjalankan analisis kode.
+Aplikasi dapat berjalan normal tanpa error import dan struktur folder terlihat lebih rapi.
