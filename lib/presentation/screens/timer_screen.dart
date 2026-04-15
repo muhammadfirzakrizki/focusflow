@@ -116,8 +116,8 @@ class _TimerScreenState extends State<TimerScreen> {
   }
 
   String _formatTime(int totalSeconds) {
-    int minutes = totalSeconds ~/ 60;
-    int seconds = totalSeconds % 60;
+    final int minutes = totalSeconds ~/ 60;
+    final int seconds = totalSeconds % 60;
     return '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
   }
 
@@ -130,7 +130,7 @@ class _TimerScreenState extends State<TimerScreen> {
   @override
   Widget build(BuildContext context) {
     final bool isTimeUp = _secondsRemaining == 0;
-    double progress = _secondsRemaining / (widget.task.duration);
+    final double progress = _secondsRemaining / (widget.task.duration);
 
     return Scaffold(
       appBar: AppBar(title: const Text("Sesi Fokus")),
