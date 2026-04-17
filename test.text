@@ -1,5 +1,5 @@
 gh issue create \
-  --title "[TASK] Restrukturisasi Folder & Clean Architecture" \
+  --title "[FEATURE] App Branding: Configure App Icon & Native Splash Screen" \
   --body-file issue.md \
   --label "enhancement" \
   --assignee "@me"
