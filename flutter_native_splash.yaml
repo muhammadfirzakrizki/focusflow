@@ -4,11 +4,16 @@ flutter_native_splash:
 
   image: assets/icon/splash.png
   image_dark: assets/icon/splash.png
+  
+  branding: assets/icon/branding.png
+  branding_bottom_padding: 24
 
   android_12:
     image: assets/icon/splash.png
     icon_background_color: "#0f0c29"
     image_dark: assets/icon/splash.png
     icon_background_color_dark: "#0f0c29"
+    branding: assets/icon/branding.png
+    branding_bottom_padding: 24
 
   fullscreen: true
