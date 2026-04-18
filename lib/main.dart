@@ -16,7 +16,7 @@ class FocusFlowApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'FocusFlow',
+      title: 'Focus Flow',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         useMaterial3: true,
@@ -93,7 +93,7 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text(
-          'FocusFlow',
+          'Focus Flow',
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
         centerTitle: true,

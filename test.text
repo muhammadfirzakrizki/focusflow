@@ -1,5 +1,5 @@
 gh issue create \
-  --title "[FEATURE] App Branding: Configure App Icon & Native Splash Screen" \
+  --title "[FEATURE] App Branding: Configure Native Splash Screen" \
   --body-file issue.md \
   --label "enhancement" \
   --assignee "@me"
