@@ -1,46 +1,61 @@
 import 'dart:convert';
 
 class TaskModel {
-  final int? id;
+  final int id; // Kita buat non-nullable agar key Dismissible aman
   final String title;
   final String description;
   final bool isDone;
-  final int duration; // Tambahan: Durasi fokus dalam detik (misal: 30)
+  final int duration;
 
   TaskModel({
-    this.id,
+    required this.id,
     required this.title,
     required this.description,
     this.isDone = false,
-    this.duration = 30, // Default durasi 30 detik
+    this.duration = 30,
   });
 
-  // 1. Konversi dari Object ke Map (untuk Database/JSON)
+  // Fungsi CopyWith: Sangat berguna untuk update status isDone di UI Kit
+  TaskModel copyWith({
+    int? id,
+    String? title,
+    String? description,
+    bool? isDone,
+    int? duration,
+  }) {
+    return TaskModel(
+      id: id ?? this.id,
+      title: title ?? this.title,
+      description: description ?? this.description,
+      isDone: isDone ?? this.isDone,
+      duration: duration ?? this.duration,
+    );
+  }
+
+  // To Map: Langsung pakai bool untuk JSON SharedPreferences
   Map<String, dynamic> toMap() {
     return {
       'id': id,
       'title': title,
       'description': description,
-      'isDone': isDone ? 1 : 0,
+      'isDone': isDone, // Simpan sebagai boolean langsung
       'duration': duration,
     };
   }
 
-  // 2. Konversi dari Map ke Object (saat ambil data)
+  // From Map: Ambil data dengan proteksi default value
   factory TaskModel.fromMap(Map<String, dynamic> map) {
     return TaskModel(
-      id: map['id'],
-      title: map['title'],
-      description: map['description'],
-      isDone: map['isDone'] == 1,
-      duration: map['duration'] ?? 25,
+      id: map['id'] ?? 0,
+      title: map['title'] ?? '',
+      description: map['description'] ?? '',
+      isDone: map['isDone'] ?? false,
+      duration: map['duration'] ?? 30,
     );
   }
 
-  // 3. Helper untuk SharedPreferences (Encode ke String JSON)
   String toJson() => json.encode(toMap());
 
-  // 4. Helper untuk SharedPreferences (Decode dari String JSON)
   factory TaskModel.fromJson(String source) =>
       TaskModel.fromMap(json.decode(source));
 }

@@ -1,9 +1,12 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+import '../../data/models/task_model.dart';
+import '../widgets/empty_task_view.dart';
+import '../widgets/task_card.dart';
 import 'add_task_screen.dart';
 import 'timer_screen.dart';
-import '../../data/models/task_model.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -65,212 +68,96 @@ class _HomeScreenState extends State<HomeScreen> {
     _saveTasks();
   }
 
+  // Fungsi untuk pindah ke halaman tambah/edit tugas
+  Future<void> _navigateToAddTask({TaskModel? task, int? index}) async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => AddTaskScreen(task: task)),
+    );
+
+    if (result != null && result is TaskModel) {
+      if (index != null) {
+        _editTask(index, result); // Kalau dari tombol edit
+      } else {
+        _addTask(result); // Kalau dari tombol FAB (tambah baru)
+      }
+    }
+  }
+
+  // Fungsi untuk pindah ke halaman Timer
+  Future<void> _navigateToTimer(TaskModel task, int index) async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => TimerScreen(task: task)),
+    );
+
+    if (result != null && result is TaskModel) {
+      _editTask(index, result);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text(
           'Focus Flow',
-          style: TextStyle(fontWeight: FontWeight.bold),
+          style: TextStyle(fontWeight: FontWeight.w800, letterSpacing: -0.5),
         ),
         centerTitle: true,
-      ),
-      body: _tasks.isEmpty
-          ? _buildEmptyState()
-          : ListView.builder(
-              padding: const EdgeInsets.all(12),
-              itemCount: _tasks.length,
-              itemBuilder: (context, index) {
-                final task = _tasks[index];
-                return _buildTaskCard(task, index);
-              },
-            ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () async {
-          final result = await Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => const AddTaskScreen()),
-          );
-
-          if (result != null && result is TaskModel) {
-            _addTask(result);
-          }
-        },
-        backgroundColor: Theme.of(context).colorScheme.primary,
-        child: const Icon(Icons.add),
-      ),
-    );
-  }
-
-  Widget _buildEmptyState() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.nights_stay_outlined,
-            size: 80,
-            color: Theme.of(
-              context,
-            ).colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            "Belum ada target fokus hari ini.",
-            style: TextStyle(
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTaskCard(TaskModel task, int index) {
-    return Dismissible(
-      key: Key(task.id.toString()),
-      direction: DismissDirection.endToStart,
-      background: Container(
-        alignment: Alignment.centerRight,
-        padding: const EdgeInsets.only(right: 20),
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.error,
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: const Icon(Icons.delete, color: Colors.white),
-      ),
-      onDismissed: (_) => _deleteTask(index),
-      child: Card(
-        margin: const EdgeInsets.only(bottom: 12),
         elevation: 0,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-          side: BorderSide(
-            color: Theme.of(
-              context,
-            ).colorScheme.onSurfaceVariant.withValues(alpha: 0.2),
-          ),
-        ),
-        child: ListTile(
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 8,
-          ),
-          leading: CircleAvatar(
-            backgroundColor: Theme.of(
-              context,
-            ).colorScheme.primary.withValues(alpha: 0.1),
-            child: Text(
-              "${task.duration}s", // Menampilkan durasi dalam detik
-              style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold),
-            ),
-          ),
-          title: Text(
-            task.title,
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              // Jika done, kasih efek coret (strikethrough)
-              decoration: task.isDone ? TextDecoration.lineThrough : null,
-              color: task.isDone
-                  ? Theme.of(context).colorScheme.onSurfaceVariant
-                  : Theme.of(context).colorScheme.onSurface,
-            ),
-          ),
-          subtitle: Text(
-            task.description,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-          // Ganti trailing agar lebih dinamis
-          trailing: Wrap(
-            // Gunakan Wrap agar bisa menampung dua tombol jika perlu
-            spacing: 12,
-            children: [
-              if (task.isDone)
-                // Tombol untuk membatalkan status Selesai
-                IconButton(
-                  icon: Icon(
-                    Icons.undo,
-                    color: Theme.of(context).colorScheme.secondary,
-                  ),
-                  onPressed: () {
-                    // Tampilkan dialog konfirmasi sebelum reset status
-                    showDialog(
-                      context: context,
-                      builder: (context) => AlertDialog(
-                        title: const Text("Reset Tugas?"),
-                        content: const Text(
-                          "Apakah kamu ingin mengembalikan tugas ini ke daftar fokus?",
-                        ),
-                        actions: [
-                          TextButton(
-                            onPressed: () =>
-                                Navigator.pop(context), // Tutup tanpa aksi
-                            child: const Text("BATAL"),
-                          ),
-                          ElevatedButton(
-                            onPressed: () {
-                              final unDoneTask = TaskModel(
-                                id: task.id,
-                                title: task.title,
-                                description: task.description,
-                                duration: task.duration,
-                                isDone: false, // Set jadi belum selesai
-                              );
-                              _editTask(index, unDoneTask); // Update ke memory
-                              Navigator.pop(context); // Tutup dialog
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Theme.of(
-                                context,
-                              ).colorScheme.secondary,
-                              foregroundColor: Colors.white,
-                            ),
-                            child: const Text("YA, RESET"),
-                          ),
-                        ],
-                      ),
-                    );
-                  },
-                ),
-
-              // Tombol edit tetap ada jika belum selesai
-              if (!task.isDone)
-                IconButton(
-                  icon: Icon(
-                    Icons.edit_outlined,
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
-                  onPressed: () async {
-                    final result = await Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => AddTaskScreen(task: task),
-                      ),
-                    );
-                    if (result != null && result is TaskModel) {
-                      _editTask(index, result);
-                    }
-                  },
-                ),
-            ],
-          ),
-          onTap: task.isDone
-              ? null // Matikan navigasi ke Timer jika sudah selesai
-              : () async {
-                  final result = await Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => TimerScreen(task: task),
-                    ),
-                  );
-                  if (result != null && result is TaskModel) {
-                    _editTask(index, result);
-                  }
-                },
-        ),
+        backgroundColor: Colors.transparent,
       ),
+      body: _tasks.isEmpty ? const EmptyTaskView() : _buildTaskList(),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => _navigateToAddTask(),
+        label: const Text(
+          "Fokus Baru",
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        icon: const Icon(Icons.add_rounded),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      ),
+    );
+  }
+
+  Widget _buildTaskList() {
+    return ListView.separated(
+      padding: const EdgeInsets.fromLTRB(
+        20,
+        12,
+        20,
+        100,
+      ), // Ruang ekstra di bawah untuk FAB
+      itemCount: _tasks.length,
+      physics: const BouncingScrollPhysics(), // Scroll ala iPhone yang kenyal
+      separatorBuilder: (context, index) => const SizedBox(height: 16),
+      itemBuilder: (context, index) {
+        final task = _tasks[index];
+
+        // Animasi muncul staggered (satu-persatu)
+        return TweenAnimationBuilder<double>(
+          duration: Duration(milliseconds: 400 + (index * 100)),
+          tween: Tween(begin: 0.0, end: 1.0),
+          builder: (context, value, child) {
+            return Opacity(
+              opacity: value,
+              child: Transform.translate(
+                offset: Offset(0, 30 * (1 - value)), // Slide up effect
+                child: child,
+              ),
+            );
+          },
+          child: TaskCard(
+            task: task,
+            index: index,
+            onDelete: (idx) => _deleteTask(idx), // Panggil konfirmasi sheet
+            onEditStatus: _editTask,
+            onEditPressed: () => _navigateToAddTask(task: task, index: index),
+            onTap: () => _navigateToTimer(task, index),
+          ),
+        );
+      },
     );
   }
 }

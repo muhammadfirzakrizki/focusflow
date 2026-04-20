@@ -1,10 +1,11 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../data/models/task_model.dart';
+import '../widgets/timer_display.dart';
+import 'package:focus_flow/core/ui_kit/app_button.dart';
 
 class TimerScreen extends StatefulWidget {
   final TaskModel task;
-
   const TimerScreen({super.key, required this.task});
 
   @override
@@ -16,103 +17,36 @@ class _TimerScreenState extends State<TimerScreen> {
   Timer? _timer;
   bool _isRunning = false;
 
-  void _finishTask() {
-    _timer?.cancel();
-
-    // Buat objek baru dengan status isDone = true
-    final completedTask = TaskModel(
-      id: widget.task.id,
-      title: widget.task.title,
-      description: widget.task.description,
-      duration: widget.task.duration,
-      isDone: true,
-    );
-
-    _showFinishedDialog(completedTask);
-  }
-
   @override
   void initState() {
     super.initState();
-    // Konversi durasi menit dari model ke detik
     _secondsRemaining = widget.task.duration;
   }
+
+  // --- LOGIC PERIPHERALS ---
 
   void _toggleTimer() {
     if (_isRunning) {
       _timer?.cancel();
     } else {
-      // Pastikan jika waktu sudah 0 dan ditekan MULAI lagi, dia reset ke awal
-      if (_secondsRemaining <= 0) {
-        _secondsRemaining = widget.task.duration;
-      }
-
       _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
         if (_secondsRemaining > 0) {
-          setState(() {
-            _secondsRemaining--;
-          });
+          setState(() => _secondsRemaining--);
         } else {
-          timer.cancel(); // Lebih aman pakai parameter timer dari callback
-          setState(() {
-            _isRunning = false;
-          });
-          _showFinishedDialog();
+          _finishTask();
         }
       });
     }
     setState(() => _isRunning = !_isRunning);
   }
 
-  void _showFinishedDialog([TaskModel? completedTask]) {
-    // 1. Pastikan kita punya objek task yang statusnya isDone = true
-    final taskToReturn =
-        completedTask ??
-        TaskModel(
-          id: widget.task.id,
-          title: widget.task.title,
-          description: widget.task.description,
-          duration: widget.task.duration,
-          isDone: true, // Paksa jadi true di sini
-        );
+  void _finishTask() {
+    _timer?.cancel();
+    setState(() => _isRunning = false);
 
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Column(
-          children: [
-            Icon(Icons.stars, color: Colors.amber, size: 50),
-            SizedBox(height: 10),
-            Text("Luar Biasa!", textAlign: TextAlign.center),
-          ],
-        ),
-        content: Text(
-          "Kamu telah berhasil fokus pada '${taskToReturn.title}' selama ${taskToReturn.duration} detik.",
-          textAlign: TextAlign.center,
-        ),
-        actionsAlignment: MainAxisAlignment.center,
-        actions: [
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context); // Tutup dialog
-
-              // 2. KRUSIAL: Kirim objek taskToReturn, BUKAN cuma 'true'
-              Navigator.pop(context, taskToReturn);
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.deepPurple,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
-              ),
-            ),
-            child: const Text("KEMBALI KE BERANDA"),
-          ),
-        ],
-      ),
-    );
+    // Menggunakan copyWith dari Model agar data konsisten
+    final completedTask = widget.task.copyWith(isDone: true);
+    _showFinishedDialog(completedTask);
   }
 
   String _formatTime(int totalSeconds) {
@@ -121,133 +55,146 @@ class _TimerScreenState extends State<TimerScreen> {
     return '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
   }
 
-  @override
-  void dispose() {
-    _timer?.cancel();
-    super.dispose();
-  }
+  // --- UI COMPONENTS ---
 
-  @override
-  Widget build(BuildContext context) {
-    final bool isTimeUp = _secondsRemaining == 0;
-    final double progress = _secondsRemaining / (widget.task.duration);
-
-    return Scaffold(
-      appBar: AppBar(title: const Text("Sesi Fokus")),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+  void _showFinishedDialog(TaskModel completedTask) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Text(
-              widget.task.title,
-              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+            const Icon(Icons.stars_rounded, color: Colors.amber, size: 80),
+            const SizedBox(height: 16),
+            const Text(
+              "Luar Biasa!",
+              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
             Text(
-              widget.task.description,
+              "Sesi fokus '${completedTask.title}' selesai.",
+              textAlign: TextAlign.center,
               style: const TextStyle(color: Colors.grey),
             ),
-            // Tampilan status berbeda jika sudah selesai
-            Text(
-              isTimeUp ? "Sesi Selesai!" : "Sedang Fokus...",
-              style: TextStyle(
-                color: isTimeUp ? Colors.green : Colors.grey,
-                fontWeight: isTimeUp ? FontWeight.bold : FontWeight.normal,
-              ),
-            ),
-            const SizedBox(height: 50),
-
-            // Visual Timer Ring
-            Stack(
-              alignment: Alignment.center,
-              children: [
-                SizedBox(
-                  width: 250,
-                  height: 250,
-                  child: CircularProgressIndicator(
-                    value: progress,
-                    strokeWidth: 12,
-                    backgroundColor: Colors.grey.shade200,
-                    // Berubah warna saat selesai
-                    color: isTimeUp ? Colors.green : Colors.deepPurple,
-                    strokeCap: StrokeCap.round,
-                  ),
-                ),
-                Text(
-                  _formatTime(_secondsRemaining),
-                  style: TextStyle(
-                    fontSize: 48,
-                    fontWeight: FontWeight.bold,
-                    fontFamily: 'monospace',
-                    color: isTimeUp ? Colors.green : Colors.black,
-                  ),
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 60),
-
-            // Tombol Kontrol
-            // Tombol Kontrol
-            Column(
-              // Gunakan Column agar tombol bisa disusun vertikal atau Row untuk horizontal
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    // Tombol Utama (Mulai / Pause)
-                    ElevatedButton.icon(
-                      onPressed: isTimeUp
-                          ? null
-                          : _toggleTimer, // Disable jika sudah nol
-                      style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 24,
-                          vertical: 14,
-                        ),
-                        backgroundColor: _isRunning
-                            ? Colors.orange.shade100
-                            : Colors.deepPurple,
-                        foregroundColor: _isRunning
-                            ? Colors.orange.shade900
-                            : Colors.white,
-                      ),
-                      icon: Icon(_isRunning ? Icons.pause : Icons.play_arrow),
-                      label: Text(_isRunning ? "PAUSE" : "MULAI"),
-                    ),
-                    const SizedBox(width: 12),
-
-                    // Tombol Selesai Sekarang (Selalu Muncul)
-                    ElevatedButton.icon(
-                      onPressed: _finishTask, // Langsung panggil fungsi dialog
-                      style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 24,
-                          vertical: 14,
-                        ),
-                        backgroundColor: Colors.green,
-                        foregroundColor: Colors.white,
-                      ),
-                      icon: const Icon(Icons.check_circle_outline),
-                      label: const Text("SELESAI"),
-                    ),
-                  ],
-                ),
-
-                // Tombol Reset (Muncul saat tidak berjalan)
-                if (!_isRunning && _secondsRemaining < widget.task.duration)
-                  TextButton.icon(
-                    onPressed: () {
-                      setState(() => _secondsRemaining = widget.task.duration);
-                    },
-                    icon: const Icon(Icons.refresh, size: 20),
-                    label: const Text("Reset Waktu"),
-                  ),
-              ],
+            const SizedBox(height: 24),
+            AppButton(
+              label: "KEMBALI KE BERANDA",
+              onPressed: () {
+                Navigator.pop(context); // Tutup dialog
+                Navigator.pop(
+                  context,
+                  completedTask,
+                ); // Balik ke Home bawa data
+              },
             ),
           ],
         ),
       ),
     );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Scaffold(
+      appBar: AppBar(title: const Text("Sesi Fokus")),
+      body: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 24.0),
+        child: Column(
+          children: [
+            const SizedBox(height: 40),
+
+            // Header: Judul & Deskripsi
+            _buildHeader(colorScheme),
+
+            const Spacer(),
+
+            // Timer: Lingkaran & Angka (Modular Widget)
+            TimerDisplay(
+              progress: _secondsRemaining / widget.task.duration,
+              formattedTime: _formatTime(_secondsRemaining),
+              isRunning: _isRunning,
+            ),
+
+            const Spacer(),
+
+            // Kontrol: Play, Pause, Reset
+            _buildActionControls(colorScheme),
+
+            const SizedBox(height: 12),
+
+            // Tombol Skip / Selesaikan Manual
+            _buildSkipButton(colorScheme),
+
+            const SizedBox(height: 40),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHeader(ColorScheme colorScheme) {
+    return Column(
+      children: [
+        Text(
+          widget.task.title,
+          textAlign: TextAlign.center,
+          style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          widget.task.description,
+          textAlign: TextAlign.center,
+          style: TextStyle(color: colorScheme.onSurfaceVariant),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildActionControls(ColorScheme colorScheme) {
+    return Row(
+      children: [
+        Expanded(
+          child: AppButton(
+            label: _isRunning ? "PAUSE" : "MULAI",
+            icon: _isRunning ? Icons.pause_rounded : Icons.play_arrow_rounded,
+            backgroundColor: _isRunning ? Colors.orange : colorScheme.primary,
+            onPressed: _toggleTimer,
+          ),
+        ),
+        // Tombol reset hanya muncul jika timer sedang berhenti dan sudah sempat berjalan
+        if (!_isRunning && _secondsRemaining < widget.task.duration) ...[
+          const SizedBox(width: 12),
+          IconButton.filledTonal(
+            onPressed: () =>
+                setState(() => _secondsRemaining = widget.task.duration),
+            icon: const Icon(Icons.refresh_rounded),
+            padding: const EdgeInsets.all(16),
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildSkipButton(ColorScheme colorScheme) {
+    return TextButton(
+      onPressed: _finishTask,
+      child: Text(
+        "Selesaikan Sekarang",
+        style: TextStyle(
+          color: colorScheme.onSurfaceVariant,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
   }
 }

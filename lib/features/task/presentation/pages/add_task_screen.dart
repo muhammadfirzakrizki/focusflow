@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../data/models/task_model.dart';
+import 'package:focus_flow/core/ui_kit/app_input.dart';
+import 'package:focus_flow/core/ui_kit/app_button.dart';
+import 'package:focus_flow/core/utils/time_converter.dart'; // Import helper baru
 
 class AddTaskScreen extends StatefulWidget {
-  final TaskModel? task; // Tambahkan parameter opsional
-
+  final TaskModel? task;
   const AddTaskScreen({super.key, this.task});
 
   @override
@@ -12,20 +14,191 @@ class AddTaskScreen extends StatefulWidget {
 }
 
 class _AddTaskScreenState extends State<AddTaskScreen> {
+  final _formKey = GlobalKey<FormState>();
+
   late TextEditingController _titleController;
   late TextEditingController _descController;
-  late TextEditingController _timerController;
+  // Pisahkan controller untuk Jam, Menit dan Detik
+  late TextEditingController _hoursController;
+  late TextEditingController _minutesController;
+  late TextEditingController _secondsController;
 
   @override
   void initState() {
     super.initState();
-    // Jika sedang edit, isi controller dengan data yang ada
     _titleController = TextEditingController(text: widget.task?.title ?? "");
     _descController = TextEditingController(
       text: widget.task?.description ?? "",
     );
-    _timerController = TextEditingController(
-      text: widget.task?.duration.toString() ?? "",
+
+    // Gunakan TimeConverter untuk mengisi nilai awal (jika mode edit)
+    final initialDuration = widget.task?.duration ?? 0;
+    _hoursController = TextEditingController(
+      text: initialDuration > 0
+          ? TimeConverter.getHours(initialDuration).toString()
+          : "",
+    );
+    _minutesController = TextEditingController(
+      text: initialDuration > 0
+          ? TimeConverter.getMinutes(initialDuration).toString()
+          : "",
+    );
+    _secondsController = TextEditingController(
+      text: initialDuration > 0
+          ? TimeConverter.getSeconds(initialDuration).toString()
+          : "",
+    );
+  }
+
+  void _submitData() {
+    if (_formKey.currentState!.validate()) {
+      // Gabungkan menit & detik kembali menjadi total detik sebelum simpan
+      final totalDuration = TimeConverter.toTotalSeconds(
+        _hoursController.text,
+        _minutesController.text,
+        _secondsController.text,
+      );
+
+      // Validasi tambahan jika total durasi adalah 0
+      if (totalDuration <= 0) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Durasi fokus tidak boleh kosong!")),
+        );
+        return;
+      }
+
+      final updatedTask = TaskModel(
+        id: widget.task?.id ?? DateTime.now().millisecondsSinceEpoch,
+        title: _titleController.text,
+        description: _descController.text,
+        duration: totalDuration,
+        isDone: widget.task?.isDone ?? false,
+      );
+
+      Navigator.pop(context, updatedTask);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isEdit = widget.task != null;
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Scaffold(
+      appBar: AppBar(title: Text(isEdit ? 'Edit Fokus' : 'Tambah Fokus Baru')),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(24.0),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            children: [
+              TextFormField(
+                controller: _titleController,
+                decoration: AppInput.decoration(
+                  label: 'Apa fokus utamamu?',
+                  icon: Icons.assignment_outlined,
+                  colorScheme: colorScheme,
+                ),
+                validator: (value) => (value == null || value.isEmpty)
+                    ? "Judul tidak boleh kosong"
+                    : null,
+              ),
+              const SizedBox(height: 20),
+
+              TextFormField(
+                controller: _descController,
+                maxLines: 2,
+                decoration: AppInput.decoration(
+                  label: 'Detail singkat',
+                  icon: Icons.notes_outlined,
+                  colorScheme: colorScheme,
+                ),
+                validator: (value) => (value == null || value.isEmpty)
+                    ? "Deskripsi harus diisi"
+                    : null,
+              ),
+              const SizedBox(height: 20),
+
+              // INPUT DURASI (JAM : MENIT : DETIK)
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // JAM
+                  Expanded(
+                    child: TextFormField(
+                      controller:
+                          _hoursController, // Jangan lupa deklarasi di atas
+                      keyboardType: TextInputType.number,
+                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                      decoration: AppInput.decoration(
+                        label: 'Jam',
+                        icon: Icons.hourglass_top_rounded,
+                        colorScheme: colorScheme,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  // MENIT
+                  Expanded(
+                    child: TextFormField(
+                      controller: _minutesController,
+                      keyboardType: TextInputType.number,
+                      inputFormatters: [
+                        FilteringTextInputFormatter.digitsOnly,
+                        LengthLimitingTextInputFormatter(2),
+                      ],
+                      decoration: AppInput.decoration(
+                        label: 'Menit',
+                        icon: Icons.hourglass_bottom_rounded,
+                        colorScheme: colorScheme,
+                      ),
+                      validator: (value) {
+                        if (value != null && value.isNotEmpty) {
+                          if (int.parse(value) >= 60) return "Maks 59";
+                        }
+                        return null;
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  // DETIK
+                  Expanded(
+                    child: TextFormField(
+                      controller: _secondsController,
+                      keyboardType: TextInputType.number,
+                      inputFormatters: [
+                        FilteringTextInputFormatter.digitsOnly,
+                        LengthLimitingTextInputFormatter(2),
+                      ],
+                      decoration: AppInput.decoration(
+                        label: 'Detik',
+                        icon: Icons.hourglass_bottom_rounded,
+                        colorScheme: colorScheme,
+                      ),
+                      validator: (value) {
+                        if (value != null && value.isNotEmpty) {
+                          if (int.parse(value) >= 60) return "Maks 59";
+                        }
+                        return null;
+                      },
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 40),
+
+              AppButton(
+                label: isEdit ? 'PERBARUI TUGAS' : 'SIMPAN KE DAFTAR',
+                icon: isEdit ? Icons.check_circle_outline : Icons.save_rounded,
+                backgroundColor: isEdit
+                    ? colorScheme.secondary
+                    : colorScheme.primary,
+                onPressed: _submitData,
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
@@ -33,106 +206,8 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
   void dispose() {
     _titleController.dispose();
     _descController.dispose();
-    _timerController.dispose();
+    _minutesController.dispose();
+    _secondsController.dispose();
     super.dispose();
-  }
-
-  void _submitData() {
-    final String enteredTitle = _titleController.text;
-    final String enteredDesc = _descController.text;
-    final int? enteredDuration = int.tryParse(_timerController.text);
-
-    if (enteredTitle.isEmpty ||
-        enteredDesc.isEmpty ||
-        enteredDuration == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Isi semua data dengan benar!")),
-      );
-      return;
-    }
-
-    final updatedTask = TaskModel(
-      // Jika edit, pakai ID lama. Jika baru, pakai timestamp baru.
-      id: widget.task?.id ?? DateTime.now().millisecondsSinceEpoch,
-      title: enteredTitle,
-      description: enteredDesc,
-      duration: enteredDuration,
-      isDone: widget.task?.isDone ?? false,
-    );
-
-    Navigator.pop(context, updatedTask);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final isEdit = widget.task != null;
-
-    return Scaffold(
-      appBar: AppBar(title: Text(isEdit ? 'Edit Fokus' : 'Tambah Fokus Baru')),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildLabel("Apa fokus utamamu?"),
-            TextField(
-              controller: _titleController,
-              decoration: _inputStyle('Judul Tugas', Icons.title),
-            ),
-            const SizedBox(height: 20),
-            _buildLabel("Detail singkat"),
-            TextField(
-              controller: _descController,
-              decoration: _inputStyle('Deskripsi', Icons.description_outlined),
-              maxLines: 2,
-            ),
-            const SizedBox(height: 20),
-            _buildLabel("Durasi Fokus (Detik)"),
-            TextField(
-              controller: _timerController,
-              keyboardType: TextInputType.number, // Memunculkan keyboard angka
-              inputFormatters: [
-                FilteringTextInputFormatter.digitsOnly, // Hanya boleh angka
-              ],
-              decoration: _inputStyle('Contoh: 30', Icons.timer_outlined),
-            ),
-            const SizedBox(height: 40),
-            SizedBox(
-              width: double.infinity,
-              height: 55,
-              child: ElevatedButton.icon(
-                onPressed: _submitData,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: isEdit
-                      ? Colors.orange
-                      : Theme.of(context).colorScheme.primary,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                icon: Icon(isEdit ? Icons.edit : Icons.save),
-                label: Text(isEdit ? 'SIMPAN PERUBAHAN' : 'SIMPAN FOKUS'),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildLabel(String text) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8.0),
-      child: Text(text, style: const TextStyle(fontWeight: FontWeight.bold)),
-    );
-  }
-
-  InputDecoration _inputStyle(String label, IconData icon) {
-    return InputDecoration(
-      labelText: label,
-      prefixIcon: Icon(icon),
-      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-    );
   }
 }
