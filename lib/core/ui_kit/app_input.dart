@@ -4,34 +4,49 @@ class AppInput {
   // Style dekorasi untuk TextFormField
   static InputDecoration decoration({
     required String label,
-    required IconData icon,
+    IconData? icon,
     required ColorScheme colorScheme,
+    bool isError = false, // TAMBAHKAN PARAMETER INI (default false)
   }) {
+    // Tentukan warna border berdasarkan status error
+    final borderColor = isError
+        ? colorScheme.error
+        : colorScheme.outlineVariant;
+    final borderWidth = isError ? 2.0 : 1.0; // Sedikit tebal jika error
+
     return InputDecoration(
       labelText: label,
-      prefixIcon: Icon(icon, size: 22),
-      labelStyle: TextStyle(color: colorScheme.onSurfaceVariant),
+      prefixIcon: icon != null ? Icon(icon, size: 22) : null,
+      labelStyle: TextStyle(
+        // Label ikut merah jika error
+        color: isError ? colorScheme.error : colorScheme.onSurfaceVariant,
+      ),
       floatingLabelStyle: TextStyle(
-        color: colorScheme.primary,
+        // Floating label tetap primer saat fokus, kecuali error
+        color: isError ? colorScheme.error : colorScheme.primary,
         fontWeight: FontWeight.bold,
       ),
 
-      // Padding di dalam input
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
 
-      // Border saat kondisi normal
+      // BORDER SAAT KONDISI NORMAL (enabled)
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
-        borderSide: BorderSide(color: colorScheme.outlineVariant),
+        // Gunakan warna dinamis di sini
+        borderSide: BorderSide(color: borderColor, width: borderWidth),
       ),
 
-      // Border saat diklik (Focus)
+      // BORDER SAAT DIKLIK (Focused)
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
-        borderSide: BorderSide(color: colorScheme.primary, width: 2),
+        // Jika error, tetap merah. Jika normal, pakai warna primer.
+        borderSide: BorderSide(
+          color: isError ? colorScheme.error : colorScheme.primary,
+          width: 2,
+        ),
       ),
 
-      // Border saat terjadi Error
+      // Border bawaan untuk error individual (tetap pertahankan)
       errorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
         borderSide: BorderSide(color: colorScheme.error),

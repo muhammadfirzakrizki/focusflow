@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 import '../../data/models/task_model.dart';
 import 'package:focus_flow/core/ui_kit/app_input.dart';
 import 'package:focus_flow/core/ui_kit/app_button.dart';
-import 'package:focus_flow/core/utils/time_converter.dart'; // Import helper baru
+import 'package:focus_flow/core/utils/time_converter.dart';
 
 class AddTaskScreen extends StatefulWidget {
   final TaskModel? task;
@@ -15,10 +15,10 @@ class AddTaskScreen extends StatefulWidget {
 
 class _AddTaskScreenState extends State<AddTaskScreen> {
   final _formKey = GlobalKey<FormState>();
+  String? _durationError;
 
   late TextEditingController _titleController;
   late TextEditingController _descController;
-  // Pisahkan controller untuk Jam, Menit dan Detik
   late TextEditingController _hoursController;
   late TextEditingController _minutesController;
   late TextEditingController _secondsController;
@@ -31,7 +31,6 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
       text: widget.task?.description ?? "",
     );
 
-    // Gunakan TimeConverter untuk mengisi nilai awal (jika mode edit)
     final initialDuration = widget.task?.duration ?? 0;
     _hoursController = TextEditingController(
       text: initialDuration > 0
@@ -51,31 +50,43 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
   }
 
   void _submitData() {
-    if (_formKey.currentState!.validate()) {
-      // Gabungkan menit & detik kembali menjadi total detik sebelum simpan
-      final totalDuration = TimeConverter.toTotalSeconds(
-        _hoursController.text,
-        _minutesController.text,
-        _secondsController.text,
-      );
+    // 1. Reset pesan error manual setiap kali tombol ditekan
+    setState(() => _durationError = null);
 
-      // Validasi tambahan jika total durasi adalah 0
-      if (totalDuration <= 0) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Durasi fokus tidak boleh kosong!")),
-        );
-        return;
-      }
+    // 2. Jalankan validasi standar Form (Judul, Deskripsi, dan batas angka 59)
+    final isFormValid = _formKey.currentState!.validate();
 
-      final updatedTask = TaskModel(
-        id: widget.task?.id ?? DateTime.now().millisecondsSinceEpoch,
-        title: _titleController.text,
-        description: _descController.text,
-        duration: totalDuration,
-        isDone: widget.task?.isDone ?? false,
-      );
+    // 3. Hitung total durasi untuk pengecekan "Minimal 1 Detik"
+    final totalDuration = TimeConverter.toTotalSeconds(
+      _hoursController.text,
+      _minutesController.text,
+      _secondsController.text,
+    );
 
-      Navigator.pop(context, updatedTask);
+    // 4. Validasi Durasi Minimal (Logika Manual)
+    if (totalDuration <= 0) {
+      setState(() => _durationError = "Durasi fokus minimal 1 detik");
+      // Kita tidak return dulu di sini agar pesan error
+      // di field lain (seperti Judul) juga muncul barengan.
+    }
+
+    // 5. Final Check: Form harus valid DAN durasi harus > 0
+    if (isFormValid && totalDuration > 0) {
+      final task =
+          widget.task?.copyWith(
+            title: _titleController.text,
+            description: _descController.text,
+            duration: totalDuration,
+          ) ??
+          TaskModel(
+            id: DateTime.now().millisecondsSinceEpoch,
+            title: _titleController.text,
+            description: _descController.text,
+            duration: totalDuration,
+            isDone: false,
+          );
+
+      Navigator.pop(context, task);
     }
   }
 
@@ -91,6 +102,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
         child: Form(
           key: _formKey,
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               TextFormField(
                 controller: _titleController,
@@ -104,7 +116,6 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                     : null,
               ),
               const SizedBox(height: 20),
-
               TextFormField(
                 controller: _descController,
                 maxLines: 2,
@@ -119,74 +130,58 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
               ),
               const SizedBox(height: 20),
 
-              // INPUT DURASI (JAM : MENIT : DETIK)
-              Row(
+              // BAGIAN INPUT DURASI
+              Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // JAM
-                  Expanded(
-                    child: TextFormField(
-                      controller:
-                          _hoursController, // Jangan lupa deklarasi di atas
-                      keyboardType: TextInputType.number,
-                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                      decoration: AppInput.decoration(
-                        label: 'Jam',
-                        icon: Icons.hourglass_top_rounded,
-                        colorScheme: colorScheme,
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildTimeField(
+                        _hoursController,
+                        'Jam',
+                        colorScheme,
+                        icon: Icons.access_time_outlined,
+                        hasError:
+                            _durationError != null, // Kirim status error ke UI
+                      ),
+                      const SizedBox(width: 8),
+                      _buildTimeField(
+                        _minutesController,
+                        'Menit',
+                        colorScheme,
+                        icon: Icons.access_time_outlined,
+                        maxVal: 59,
+                        hasError:
+                            _durationError != null, // Kirim status error ke UI
+                      ),
+                      const SizedBox(width: 8),
+                      _buildTimeField(
+                        _secondsController,
+                        'Detik',
+                        colorScheme,
+                        icon: Icons.access_time_outlined,
+                        maxVal: 59,
+                        hasError:
+                            _durationError != null, // Kirim status error ke UI
+                      ),
+                    ],
+                  ),
+                  if (_durationError != null)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8, left: 12),
+                      child: Text(
+                        _durationError!,
+                        style: TextStyle(
+                          color: colorScheme.error,
+                          fontSize: 12,
+                        ),
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 8),
-                  // MENIT
-                  Expanded(
-                    child: TextFormField(
-                      controller: _minutesController,
-                      keyboardType: TextInputType.number,
-                      inputFormatters: [
-                        FilteringTextInputFormatter.digitsOnly,
-                        LengthLimitingTextInputFormatter(2),
-                      ],
-                      decoration: AppInput.decoration(
-                        label: 'Menit',
-                        icon: Icons.hourglass_bottom_rounded,
-                        colorScheme: colorScheme,
-                      ),
-                      validator: (value) {
-                        if (value != null && value.isNotEmpty) {
-                          if (int.parse(value) >= 60) return "Maks 59";
-                        }
-                        return null;
-                      },
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  // DETIK
-                  Expanded(
-                    child: TextFormField(
-                      controller: _secondsController,
-                      keyboardType: TextInputType.number,
-                      inputFormatters: [
-                        FilteringTextInputFormatter.digitsOnly,
-                        LengthLimitingTextInputFormatter(2),
-                      ],
-                      decoration: AppInput.decoration(
-                        label: 'Detik',
-                        icon: Icons.hourglass_bottom_rounded,
-                        colorScheme: colorScheme,
-                      ),
-                      validator: (value) {
-                        if (value != null && value.isNotEmpty) {
-                          if (int.parse(value) >= 60) return "Maks 59";
-                        }
-                        return null;
-                      },
-                    ),
-                  ),
                 ],
               ),
-              const SizedBox(height: 40),
 
+              const SizedBox(height: 40),
               AppButton(
                 label: isEdit ? 'PERBARUI TUGAS' : 'SIMPAN KE DAFTAR',
                 icon: isEdit ? Icons.check_circle_outline : Icons.save_rounded,
@@ -202,10 +197,50 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
     );
   }
 
+  // Di dalam class _AddTaskScreenState di AddTaskScreen
+
+  // 1. Update parameter fungsi helper
+  Widget _buildTimeField(
+    TextEditingController controller,
+    String label,
+    ColorScheme colorScheme, {
+    IconData? icon,
+    int? maxVal,
+    required bool hasError, // TAMBAHKAN PARAMETER INI
+  }) {
+    return Expanded(
+      child: TextFormField(
+        controller: controller,
+        keyboardType: TextInputType.number,
+        inputFormatters: [
+          FilteringTextInputFormatter.digitsOnly,
+          LengthLimitingTextInputFormatter(2),
+        ],
+        decoration: AppInput.decoration(
+          label: label,
+          icon: icon,
+          colorScheme: colorScheme,
+          // KIRIM STATUS ERROR KE UI KIT
+          isError: hasError,
+        ),
+        validator: (value) {
+          if (value != null && value.isNotEmpty) {
+            final numValue = int.tryParse(value);
+            if (numValue != null && maxVal != null && numValue > maxVal) {
+              return "Maks $maxVal";
+            }
+          }
+          return null;
+        },
+      ),
+    );
+  }
+
   @override
   void dispose() {
     _titleController.dispose();
     _descController.dispose();
+    _hoursController.dispose();
     _minutesController.dispose();
     _secondsController.dispose();
     super.dispose();
