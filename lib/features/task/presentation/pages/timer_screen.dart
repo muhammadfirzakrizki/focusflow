@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../data/models/task_model.dart';
 import '../widgets/timer_display.dart';
 import 'package:focus_flow/core/ui_kit/app_button.dart';
+import 'package:focus_flow/core/ui_kit/app_sheet.dart';
 
 class TimerScreen extends StatefulWidget {
   final TaskModel task;
@@ -58,40 +59,20 @@ class _TimerScreenState extends State<TimerScreen> {
   // --- UI COMPONENTS ---
 
   void _showFinishedDialog(TaskModel completedTask) {
-    showDialog(
+    AppSheet.showConfirmation(
       context: context,
-      barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.stars_rounded, color: Colors.amber, size: 80),
-            const SizedBox(height: 16),
-            const Text(
-              "Luar Biasa!",
-              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              "Sesi fokus '${completedTask.title}' selesai.",
-              textAlign: TextAlign.center,
-              style: const TextStyle(color: Colors.grey),
-            ),
-            const SizedBox(height: 24),
-            AppButton(
-              label: "KEMBALI KE BERANDA",
-              onPressed: () {
-                Navigator.pop(context); // Tutup dialog
-                Navigator.pop(
-                  context,
-                  completedTask,
-                ); // Balik ke Home bawa data
-              },
-            ),
-          ],
-        ),
-      ),
+      title: "Luar Biasa!",
+      description:
+          "Sesi fokus '${completedTask.title}' telah selesai. Kamu selangkah lebih dekat dengan tujuanmu.",
+      icon: Icons.stars_rounded,
+      confirmLabel: "KEMBALI KE BERANDA",
+      // Kamu bisa kustom warna di sini, misal warna emas agar terasa premium
+      confirmColor: Colors.amber.shade700,
+      onConfirm: () {
+        // Karena Navigator.pop(context) sudah dijalankan di dalam AppSheet,
+        // kita tinggal menjalankan Navigator.pop untuk balik ke Home bawa data.
+        Navigator.pop(context, completedTask);
+      },
     );
   }
 

@@ -100,15 +100,30 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          'Focus Flow',
-          style: TextStyle(fontWeight: FontWeight.w800, letterSpacing: -0.5),
+        title: Text(
+          'FocusFlow',
+          style: TextStyle(
+            fontWeight: FontWeight.w900,
+            letterSpacing: -1.2, // Lebih rapat = lebih modern
+            color: Theme.of(context).colorScheme.primary, // Gunakan warna brand
+          ),
         ),
-        centerTitle: true,
+        centerTitle: true, // Alignment kiri biasanya terasa lebih "app modern"
         elevation: 0,
+        scrolledUnderElevation: 0, // Mencegah warna berubah saat scroll
         backgroundColor: Colors.transparent,
+        // actions: [
+        //   IconButton(
+        //     onPressed: () {},
+        //     icon: const Icon(Icons.settings_outlined),
+        //   ),
+        // ],
       ),
-      body: _tasks.isEmpty ? const EmptyTaskView() : _buildTaskList(),
+      body: _tasks.isEmpty
+          ? EmptyTaskView(
+              onAddTask: _navigateToAddTask, // Placeholder, akan diisi nanti
+            )
+          : _buildTaskList(),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _navigateToAddTask(),
         label: const Text(
