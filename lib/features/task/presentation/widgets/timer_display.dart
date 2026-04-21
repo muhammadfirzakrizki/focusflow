@@ -16,43 +16,48 @@ class TimerDisplay extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
 
-    // 1. Perbaikan Font Size Dinamis
-    // HH:MM:SS biasanya 7-8 karakter. Kita buat lebih safe.
+    // Perbaikan Font Size Dinamis
     double dynamicFontSize;
     if (formattedTime.length > 7) {
-      dynamicFontSize = 44; // Sangat panjang (misal 10:00:00)
+      dynamicFontSize = 44;
     } else if (formattedTime.length > 5) {
-      dynamicFontSize = 50; // Format H:MM:SS
+      dynamicFontSize = 50;
     } else {
-      dynamicFontSize = 64; // Format MM:SS
+      dynamicFontSize = 64;
     }
 
     return Stack(
       alignment: Alignment.center,
       children: [
-        // Background Glow (Opsional - Menambah kesan premium)
+        // Background Glow
         Container(
           width: 240,
           height: 240,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             color: (isRunning ? colorScheme.primary : colorScheme.secondary)
-                .withValues(alpha: 0.03),
+                .withAlpha(8), // Sekitar 0.03 alpha
           ),
         ),
 
-        // Lingkaran Progress
+        // Lingkaran Progress dengan Animasi Halus
         SizedBox(
           width: 280,
           height: 280,
-          child: CircularProgressIndicator(
-            // Balikkan value jika kamu ingin progress berkurang (Countdown)
-            // Biasanya: 1.0 -> 0.0
-            value: progress,
-            strokeWidth: 12,
-            backgroundColor: colorScheme.surfaceContainerHighest,
-            color: isRunning ? colorScheme.primary : colorScheme.secondary,
-            strokeCap: StrokeCap.round,
+          child: TweenAnimationBuilder<double>(
+            tween: Tween<double>(begin: progress, end: progress),
+            duration: const Duration(
+              milliseconds: 500,
+            ), // Animasi pergerakan progress
+            builder: (context, value, child) {
+              return CircularProgressIndicator(
+                value: value,
+                strokeWidth: 12,
+                backgroundColor: colorScheme.surfaceContainerHighest,
+                color: isRunning ? colorScheme.primary : colorScheme.secondary,
+                strokeCap: StrokeCap.round,
+              );
+            },
           ),
         ),
 
@@ -61,15 +66,14 @@ class TimerDisplay extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 20),
           child: Text(
             formattedTime,
-            maxLines: 1, // Pastikan tidak membungkus ke bawah
+            maxLines: 1,
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: dynamicFontSize,
-              fontWeight: FontWeight.w200,
+              fontWeight: FontWeight.w200, // Light weight bikin kesan elegan
               fontFamily: 'monospace',
               color: colorScheme.onSurface,
-              letterSpacing: -2, // Lebih rapat = lebih modern/elegant
-              // Memastikan angka tetap di tengah meski font sizenya berubah
+              letterSpacing: -2,
               height: 1,
             ),
           ),

@@ -4,7 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 class AppTheme {
   // 🎨 DaisyUI Color Palette (Contoh Tema: Modern/Corporate)
   static const Color _primary = Color(0xFF6C3FC5); // Primary
-  static const Color _secondary = Color(0xFFF000B8); // Secondary
+  static const Color _secondary = Color(0xFF9F7AEA);
   static const Color _accent = Color(0xFF37CDBE); // Accent/Info
   static const Color _neutral = Color(0xFF3D4451); // Neutral (untuk text/dark)
   static const Color _error = Color(0xFFF87272); // Error

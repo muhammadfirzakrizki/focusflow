@@ -4,16 +4,15 @@ import 'package:focus_flow/core/ui_kit/app_sheet.dart';
 
 class TaskCard extends StatelessWidget {
   final TaskModel task;
-  final int index;
-  final Function(int) onDelete;
-  final Function(int, TaskModel) onEditStatus;
+  // Hapus parameter index karena kita pakai task.id sekarang
+  final Function(String) onDelete;
+  final Function(String, TaskModel) onEditStatus;
   final VoidCallback onTap;
   final VoidCallback onEditPressed;
 
   const TaskCard({
     super.key,
     required this.task,
-    required this.index,
     required this.onDelete,
     required this.onEditStatus,
     required this.onTap,
@@ -23,12 +22,10 @@ class TaskCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-
-    // 1. Logika Warna Border & Avatar
     final Color statusColor = task.isDone ? Colors.green : colorScheme.primary;
 
     return Dismissible(
-      key: ValueKey(task.id),
+      key: ValueKey(task.id), // Sangat penting untuk PowerSync/SQLite
       direction: DismissDirection.endToStart,
       confirmDismiss: (direction) async {
         bool shouldDelete = false;
@@ -43,19 +40,20 @@ class TaskCard extends StatelessWidget {
         );
         return shouldDelete;
       },
-      onDismissed: (_) => onDelete(index),
+      // Mengirim task.id ke fungsi onDelete
+      onDismissed: (_) => onDelete(task.id),
       background: _buildDeleteBackground(colorScheme),
 
       child: Opacity(
-        // 2. Efek transparan jika sudah selesai
         opacity: task.isDone ? 0.7 : 1.0,
         child: Card(
           elevation: 0,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
             side: BorderSide(
-              // 3. Border berubah warna hijau jika selesai
-              color: statusColor.withValues(alpha: 0.5),
+              color: statusColor.withAlpha(
+                128,
+              ), // Mengganti .withValues agar lebih kompatibel
               width: task.isDone ? 2 : 1,
             ),
           ),
@@ -65,7 +63,7 @@ class TaskCard extends StatelessWidget {
               vertical: 8,
             ),
             leading: CircleAvatar(
-              backgroundColor: statusColor.withValues(alpha: 0.1),
+              backgroundColor: statusColor.withAlpha(25),
               child: Icon(
                 task.isDone ? Icons.check_rounded : Icons.timer_outlined,
                 color: statusColor,
@@ -87,7 +85,6 @@ class TaskCard extends StatelessWidget {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
-            // 4. Trailing hanya muncul tombol edit jika belum selesai
             trailing: !task.isDone
                 ? IconButton(
                     icon: Icon(Icons.edit_outlined, color: colorScheme.primary),
@@ -96,7 +93,6 @@ class TaskCard extends StatelessWidget {
                 : null,
             onTap: () {
               if (task.isDone) {
-                // 5. Jika di-tap saat selesai, langsung muncul konfirmasi reset
                 _showResetDialog(context);
               } else {
                 onTap();
@@ -108,7 +104,6 @@ class TaskCard extends StatelessWidget {
     );
   }
 
-  // Widget background swipe hapus (dipisah agar build method bersih)
   Widget _buildDeleteBackground(ColorScheme colorScheme) {
     return Container(
       alignment: Alignment.centerRight,
@@ -136,7 +131,8 @@ class TaskCard extends StatelessWidget {
       confirmColor: Theme.of(context).colorScheme.secondary,
       onConfirm: () {
         final unDoneTask = task.copyWith(isDone: false);
-        onEditStatus(index, unDoneTask);
+        // Mengirim task.id ke fungsi onEditStatus
+        onEditStatus(task.id, unDoneTask);
       },
     );
   }

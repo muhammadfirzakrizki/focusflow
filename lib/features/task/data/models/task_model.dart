@@ -1,27 +1,30 @@
 import 'dart:convert';
 
 class TaskModel {
-  final int id; // Kita buat non-nullable agar key Dismissible aman
+  final String id;
   final String title;
   final String description;
   final bool isDone;
   final int duration;
+  final DateTime createdAt;
 
   TaskModel({
     required this.id,
     required this.title,
     required this.description,
+    required this.createdAt,
     this.isDone = false,
     this.duration = 30,
   });
 
   // Fungsi CopyWith: Sangat berguna untuk update status isDone di UI Kit
   TaskModel copyWith({
-    int? id,
+    String? id,
     String? title,
     String? description,
     bool? isDone,
     int? duration,
+    DateTime? createdAt,
   }) {
     return TaskModel(
       id: id ?? this.id,
@@ -29,6 +32,7 @@ class TaskModel {
       description: description ?? this.description,
       isDone: isDone ?? this.isDone,
       duration: duration ?? this.duration,
+      createdAt: createdAt ?? this.createdAt,
     );
   }
 
@@ -40,6 +44,7 @@ class TaskModel {
       'description': description,
       'isDone': isDone, // Simpan sebagai boolean langsung
       'duration': duration,
+      'createdAt': createdAt.toIso8601String(),
     };
   }
 
@@ -51,6 +56,7 @@ class TaskModel {
       description: map['description'] ?? '',
       isDone: map['isDone'] ?? false,
       duration: map['duration'] ?? 30,
+      createdAt: DateTime.tryParse(map['createdAt'] ?? '') ?? DateTime.now(),
     );
   }
 

@@ -37,19 +37,30 @@ dependencies:
   cupertino_icons: ^1.0.8
   shared_preferences: ^2.5.5
   google_fonts: ^8.0.2
-  flutter_native_splash: ^2.4.7
+
+  # state management
+  flutter_riverpod: ^3.3.1
+  riverpod_annotation: ^4.0.2
+
+  # powersync & Sqlite
+  powersync:  ^2.0.1
+  sqlite3: ^3.3.1
+  sqlite3_flutter_libs: ^0.6.0+eol
+  path_provider: ^2.1.5
+  path: ^1.9.1
+  equatable: ^2.0.8
+
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_launcher_icons: ^0.14.4
-
-  # The "flutter_lints" package below contains a set of recommended lints to
-  # encourage good coding practices. The lint set provided by the package is
-  # activated in the `analysis_options.yaml` file located at the root of your
-  # package. See that file for information about deactivating specific lint
-  # rules and activating additional ones.
+  flutter_native_splash: ^2.4.7
   flutter_lints: ^6.0.0
+
+  # Generator (Hanya untuk Riverpod)
+  riverpod_generator: ^4.0.3
+  build_runner: ^2.13.1
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

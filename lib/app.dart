@@ -18,7 +18,10 @@ class FocusFlowApp extends StatelessWidget {
 
       // 🧭 Navigation (future-ready)
       home: const HomeScreen(),
-
+      // Agar scroll terasa natural di semua device
+      scrollBehavior: const MaterialScrollBehavior().copyWith(
+        scrollbars: false,
+      ),
       // 💡 Optional (biar UX lebih halus)
       themeAnimationDuration: const Duration(milliseconds: 200),
     );

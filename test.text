@@ -1,5 +1,5 @@
 gh issue create \
-  --title "[FEATURE] App Branding: Configure Native Splash Screen" \
+  --title "feat: integrate Riverpod and Isar for FocusFlow" \
   --body-file issue.md \
   --label "enhancement" \
   --assignee "@me"

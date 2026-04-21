@@ -1,19 +1,21 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart'; // Tambahkan Riverpod
 import '../../data/models/task_model.dart';
+import '../../../../providers/task/task_provider.dart'; // Import provider kamu
 import '../widgets/timer_display.dart';
 import 'package:focus_flow/core/ui_kit/app_button.dart';
 import 'package:focus_flow/core/ui_kit/app_sheet.dart';
 
-class TimerScreen extends StatefulWidget {
+class TimerScreen extends ConsumerStatefulWidget {
   final TaskModel task;
   const TimerScreen({super.key, required this.task});
 
   @override
-  State<TimerScreen> createState() => _TimerScreenState();
+  ConsumerState<TimerScreen> createState() => _TimerScreenState();
 }
 
-class _TimerScreenState extends State<TimerScreen> {
+class _TimerScreenState extends ConsumerState<TimerScreen> {
   late int _secondsRemaining;
   Timer? _timer;
   bool _isRunning = false;
@@ -23,8 +25,6 @@ class _TimerScreenState extends State<TimerScreen> {
     super.initState();
     _secondsRemaining = widget.task.duration;
   }
-
-  // --- LOGIC PERIPHERALS ---
 
   void _toggleTimer() {
     if (_isRunning) {
@@ -45,8 +45,11 @@ class _TimerScreenState extends State<TimerScreen> {
     _timer?.cancel();
     setState(() => _isRunning = false);
 
-    // Menggunakan copyWith dari Model agar data konsisten
     final completedTask = widget.task.copyWith(isDone: true);
+
+    // UPDATE DATABASE LANGSUNG
+    ref.read(taskControllerProvider.notifier).addTask(completedTask);
+
     _showFinishedDialog(completedTask);
   }
 
@@ -56,8 +59,6 @@ class _TimerScreenState extends State<TimerScreen> {
     return '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
   }
 
-  // --- UI COMPONENTS ---
-
   void _showFinishedDialog(TaskModel completedTask) {
     AppSheet.showConfirmation(
       context: context,
@@ -66,12 +67,10 @@ class _TimerScreenState extends State<TimerScreen> {
           "Sesi fokus '${completedTask.title}' telah selesai. Kamu selangkah lebih dekat dengan tujuanmu.",
       icon: Icons.stars_rounded,
       confirmLabel: "KEMBALI KE BERANDA",
-      // Kamu bisa kustom warna di sini, misal warna emas agar terasa premium
       confirmColor: Colors.amber.shade700,
       onConfirm: () {
-        // Karena Navigator.pop(context) sudah dijalankan di dalam AppSheet,
-        // kita tinggal menjalankan Navigator.pop untuk balik ke Home bawa data.
-        Navigator.pop(context, completedTask);
+        // Cukup pop sekali untuk kembali ke Home
+        Navigator.pop(context);
       },
     );
   }
@@ -81,35 +80,27 @@ class _TimerScreenState extends State<TimerScreen> {
     final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
-      appBar: AppBar(title: const Text("Sesi Fokus")),
+      appBar: AppBar(
+        title: const Text("Sesi Fokus"),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+      ),
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 24.0),
         child: Column(
           children: [
             const SizedBox(height: 40),
-
-            // Header: Judul & Deskripsi
             _buildHeader(colorScheme),
-
             const Spacer(),
-
-            // Timer: Lingkaran & Angka (Modular Widget)
             TimerDisplay(
               progress: _secondsRemaining / widget.task.duration,
               formattedTime: _formatTime(_secondsRemaining),
               isRunning: _isRunning,
             ),
-
             const Spacer(),
-
-            // Kontrol: Play, Pause, Reset
             _buildActionControls(colorScheme),
-
             const SizedBox(height: 12),
-
-            // Tombol Skip / Selesaikan Manual
             _buildSkipButton(colorScheme),
-
             const SizedBox(height: 40),
           ],
         ),
@@ -146,7 +137,6 @@ class _TimerScreenState extends State<TimerScreen> {
             onPressed: _toggleTimer,
           ),
         ),
-        // Tombol reset hanya muncul jika timer sedang berhenti dan sudah sempat berjalan
         if (!_isRunning && _secondsRemaining < widget.task.duration) ...[
           const SizedBox(width: 12),
           IconButton.filledTonal(
