@@ -1,77 +1,125 @@
-# 🌊 FocusFlow
+# FocusFlow
 
-FocusFlow adalah aplikasi manajemen tugas (task management) minimalis yang dibangun menggunakan Flutter dengan standar Material 3. Aplikasi ini dirancang untuk menunjukkan implementasi dasar pengembangan aplikasi mobile profesional, mulai dari UI/UX hingga penyimpanan data lokal.
+FocusFlow adalah aplikasi produktivitas berbasis Flutter untuk mengelola task dan sesi fokus. Aplikasi ini menyimpan data secara lokal dengan PowerSync + SQLite, memakai Riverpod untuk state management, dan menerapkan struktur feature-based yang mendekati clean architecture.
 
----
+## Fitur Utama
 
-## ✨ Fitur Utama
+- Task CRUD lokal: tambah, edit, hapus, dan lihat daftar task.
+- Focus timer: hitung mundur sesi fokus dengan update progress per milidetik.
+- Pause dan resume: progres yang berjalan disimpan di `remaining_duration_ms`.
+- Reset aman: reset memakai konfirmasi `AppSheet` agar tidak kepencet tidak sengaja.
+- Task completion: task bisa ditandai selesai tanpa menimpa durasi awal.
+- Theme settings: dukungan light/dark mode.
+- Material 3: UI mengikuti komponen dan gaya Material terbaru.
 
-- **Full CRUD** — Menambah, melihat, dan menghapus tugas secara dinamis.
-- **Local Persistence** — Data tetap tersimpan menggunakan `shared_preferences` (data tidak hilang saat aplikasi ditutup).
-- **Modern Interaction** — Fitur Swipe-to-Delete untuk menghapus tugas dengan gestur geser.
-- **Material 3 UI** — Menggunakan komponen desain terbaru dari Google dan Google Fonts (Plus Jakarta Sans).
+## Tech Stack
 
----
+- Flutter
+- Dart
+- Riverpod
+- PowerSync
+- SQLite
+- Equatable
+- Google Fonts
 
-## 🛠 Tech Stack
+## Arsitektur
 
-| Kategori  | Teknologi              |
-|-----------|------------------------|
-| Framework | Flutter                |
-| Language  | Dart                   |
-| Storage   | Shared Preferences     |
-| UI        | Material 3 & Google Fonts |
+Project ini memakai struktur feature-based dengan layer utama:
 
----
+- `domain`: entity, repository contract, dan use case.
+- `data`: model, repository implementation, dan datasource.
+- `presentation`: halaman, widget, dan provider untuk UI.
+- `core`: shared utilities, theme, UI kit, dan database config.
 
-## 🏗 Struktur Folder
+Alur dependensi dibuat satu arah:
 
-Proyek ini menggunakan struktur yang terorganisir agar mudah dikelola:
+- UI membaca state dan memanggil provider di feature terkait.
+- Provider memanggil repository.
+- Repository berkomunikasi dengan PowerSync/SQLite.
+- Domain tetap bebas dari detail penyimpanan.
 
-```
+## Struktur Folder
+
+```text
 lib/
-├── data/               # Logika penyimpanan dan model data
-├── presentation/       # Semua komponen UI (Screens & Widgets)
-└── main.dart           # Titik masuk utama aplikasi
+├── app.dart
+├── main.dart
+├── core/
+│   ├── database/
+│   ├── theme/
+│   ├── ui_kit/
+│   ├── utils/
+│   └── widgets/
+├── features/
+│   ├── settings/
+│   │   ├── data/
+│   │   ├── presentation/
+│   │   └── providers/
+│   └── task/
+│       ├── data/
+│       ├── domain/
+│       └── presentation/
+│           ├── pages/
+│           ├── providers/
+│           └── widgets/
 ```
 
----
+## Database
 
-## 🚀 Cara Menjalankan Proyek
+Database lokal diinisialisasi lewat `PowerSyncConfig`.
 
-Bagi Anda yang ingin mencoba menjalankan proyek ini di lingkungan lokal, ikuti langkah-langkah berikut:
+### Tabel `tasks`
 
-### Persyaratan
+- `id`
+- `title`
+- `description`
+- `duration`
+- `remaining_duration_ms`
+- `is_done`
+- `created_at`
 
-Pastikan Anda sudah menginstal **Flutter SDK** dan memiliki editor seperti **VS Code** atau **Android Studio**.
+### Tabel `app_settings`
 
-### Langkah-langkah
+- `id`
+- `value`
 
-1. **Clone Repositori**
-   ```bash
-   git clone https://github.com/muhammadfirzakrizki/focus_flow.git
-   ```
+`duration` dipakai sebagai durasi awal yang tetap.  
+`remaining_duration_ms` dipakai untuk progres timer yang berubah saat pause, resume, dan reset.
 
-2. **Masuk ke Direktori**
-   ```bash
-   cd focus_flow
-   ```
+## Cara Menjalankan
 
-3. **Instal Dependencies**
-   ```bash
-   flutter pub get
-   ```
+### Prasyarat
 
-4. **Jalankan Aplikasi**
+- Flutter SDK terbaru yang kompatibel dengan project ini
+- Android Studio, VS Code, atau IDE Flutter lain
+- Emulator atau device fisik
 
-   Hubungkan HP (lewat kabel/wireless debugging) atau buka Emulator, lalu jalankan:
-   ```bash
-   flutter run
-   ```
+### Langkah
 
----
+```bash
+git clone https://github.com/muhammadfirzakrizki/focus-flow-flutter-app.git
+cd focus-flow-flutter-app
+flutter pub get
+flutter run
+```
 
-<p align="center">
-  Dibuat oleh <b>Muhammad Firzak Rizki</b><br>
-  Software Developer | Bogor, Indonesia
-</p>
+### Jika Riverpod Generator Perlu Dijalankan
+
+```bash
+dart run build_runner build --delete-conflicting-outputs
+```
+
+## Catatan Implementasi
+
+- Reset timer selalu kembali ke durasi awal, bukan ke nilai pause terakhir.
+- Sisa waktu disimpan dalam milidetik agar progress lebih presisi.
+- Konfirmasi reset dan hapus task memakai bottom sheet khusus supaya tidak mudah salah klik.
+- Data tema dan task disimpan lokal melalui PowerSync.
+
+## Screenshot
+
+Bagian ini bisa diisi dengan tangkapan layar aplikasi jika diperlukan.
+
+## Lisensi
+
+Project ini saat ini belum memiliki lisensi resmi.
