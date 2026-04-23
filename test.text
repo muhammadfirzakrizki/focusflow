@@ -1,5 +1,5 @@
 gh issue create \
-  --title "feat: integrate Riverpod and Isar for FocusFlow" \
+  --title "Implementasi dan Peningkatan Loading State" \
   --body-file issue.md \
   --label "enhancement" \
   --assignee "@me"

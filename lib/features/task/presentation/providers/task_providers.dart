@@ -31,6 +31,8 @@ class TaskController {
   final TaskRepository _repository;
   final CompleteTaskUseCase _completeTaskUseCase;
 
+  Object? get isLoading => null;
+
   Future<void> saveTask(TaskEntity task) {
     debugPrint(
       'TaskController.saveTask: ${task.id} - remaining: ${task.remainingDurationMs}',
