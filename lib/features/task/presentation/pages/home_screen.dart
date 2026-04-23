@@ -7,6 +7,7 @@ import '../widgets/task_card.dart';
 import '../../../settings/presentation/pages/settings_screen.dart';
 import 'add_task_screen.dart';
 import 'timer_screen.dart';
+import '../../../../core/ui_kit/app_loading_state.dart';
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
@@ -68,6 +69,7 @@ class HomeScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     // Mendengarkan data dari PowerSync secara Real-time
     final tasksAsync = ref.watch(taskListStreamProvider);
+    final isSaving = ref.watch(taskControllerProvider).isLoading;
 
     return Scaffold(
       appBar: AppBar(
@@ -99,7 +101,9 @@ class HomeScreen extends ConsumerWidget {
         data: (tasks) => tasks.isEmpty
             ? EmptyTaskView(onAddTask: () => _navigateToAddTask(context, ref))
             : _buildTaskList(tasks, ref),
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () => isSaving
+            ? const AppLoadingOverlay(isLoading: true, child: SizedBox.expand())
+            : const Center(child: CircularProgressIndicator()),
         error: (err, stack) => Center(child: Text('Error: $err')),
       ),
       floatingActionButton: FloatingActionButton.extended(

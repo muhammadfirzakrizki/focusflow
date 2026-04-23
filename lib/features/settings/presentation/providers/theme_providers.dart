@@ -20,6 +20,8 @@ class ThemeController extends AsyncNotifier<void> {
   Future<void> setThemeMode(ThemeMode mode) async {
     state = const AsyncLoading();
     state = await AsyncValue.guard(() async {
+      // Simulasi delay 5 detik untuk menguji loading state overlay
+      // await Future.delayed(const Duration(seconds: 5));
       await ref.read(themeDataSourceProvider).saveThemeMode(mode);
     });
   }
